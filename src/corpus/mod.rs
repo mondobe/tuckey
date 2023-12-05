@@ -10,8 +10,7 @@ impl<'a> Corpus<'a> {
             tokens: (0..text.len())
                 .map(|i| Token {
                     source: text,
-                    content_range: i..i + 1,
-                    children: vec![],
+                    data: TokenData::Leaf(i..i + 1),
                 })
                 .collect(),
         }

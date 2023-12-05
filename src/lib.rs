@@ -1,2 +1,3 @@
-mod matching;
+mod corpus;
+mod sequence;
 mod token;
