@@ -1,8 +1,6 @@
 use core::ops::Range;
 use std::fmt::Debug;
 
-use crate::sequence::TokenMatch;
-
 #[derive(Clone)]
 pub struct Token<'a> {
     pub source: &'a str,
@@ -19,17 +17,13 @@ impl<'a> Token<'a> {
     pub fn content_range(&self) -> Option<Range<usize>> {
         match &self.data {
             TokenData::Leaf(range) => Some(range.clone()),
-            TokenData::Branch(children) if children.len() == 0 => None,
+            TokenData::Branch(children) if children.is_empty() => None,
             TokenData::Branch(children) => {
                 let iter: Vec<Range<usize>> = children
                     .iter()
                     .filter_map(|s| s.1.content_range())
                     .collect();
-                if let Some(first) = iter.first() {
-                    Some(first.start..iter.last().unwrap().end)
-                } else {
-                    None
-                }
+                iter.first().map(|first| first.start..iter.last().unwrap().end)
             }
         }
     }
@@ -47,9 +41,7 @@ impl<'a> Token<'a> {
 
     pub fn get_first_child(&'a self, key: &'a str) -> Option<&'a Token<'a>> {
         self.get_children(key)
-            .iter()
-            .filter(|i| i.0 == key)
-            .next()
+            .iter().find(|i| i.0 == key)
             .map(|m| &m.1)
     }
 
@@ -69,7 +61,7 @@ impl<'a> Token<'a> {
             TokenData::Branch(children) => {
                 graph += "{\n";
                 for child in children {
-                    if child.0 != "" {
+                    if !child.0.is_empty() {
                         for _ in 0..depth + 1 {
                             graph += "\t";
                         }
