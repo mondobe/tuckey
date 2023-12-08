@@ -1,12 +1,10 @@
-use std::collections::HashMap;
-
 use crate::corpus::*;
 use crate::sequence::*;
 use crate::token::*;
 use test_case::test_case;
 
-pub fn calc_seqs() -> HashMap<String, Box<dyn Sequence>> {
-    let mut map = HashMap::new();
+pub fn calc_seqs() -> RefMap {
+    let mut map = RefMap::new();
     let nonzero_seq = ChooseSeq::from_chars("123456789");
     map.insert(
         "nonzero".to_string(),
@@ -113,11 +111,11 @@ pub fn eval(body: &str) -> Option<f64> {
 }
 
 pub fn eval_expr(expr: &Token<'_>) -> f64 {
-    let mut to_ret = eval_mult_expr(expr.get_first_child("lhs").unwrap());
+    let mut to_ret = eval_mult_expr(&expr.get_first_child("lhs").unwrap());
     for opers in expr.get_first_child("rhs's").unwrap().get_children("rhs's") {
-        match opers.1.get_children("oper")[0].1.content() {
-            "+" => to_ret += eval_mult_expr(&opers.1.get_children("oper")[1].1),
-            "-" => to_ret -= eval_mult_expr(&opers.1.get_children("oper")[1].1),
+        match opers.get_children("oper")[0].content() {
+            "+" => to_ret += eval_mult_expr(&opers.get_children("oper")[1]),
+            "-" => to_ret -= eval_mult_expr(&opers.get_children("oper")[1]),
             _ => {}
         }
     }
@@ -125,11 +123,11 @@ pub fn eval_expr(expr: &Token<'_>) -> f64 {
 }
 
 pub fn eval_mult_expr(expr: &Token<'_>) -> f64 {
-    let mut to_ret = eval_num_expr(expr.get_first_child("lhs").unwrap());
+    let mut to_ret = eval_num_expr(&expr.get_first_child("lhs").unwrap());
     for opers in expr.get_first_child("rhs's").unwrap().get_children("rhs's") {
-        match opers.1.get_children("oper")[0].1.content() {
-            "*" => to_ret *= eval_num_expr(&opers.1.get_children("oper")[1].1),
-            "/" => to_ret /= eval_num_expr(&opers.1.get_children("oper")[1].1),
+        match opers.get_children("oper")[0].content() {
+            "*" => to_ret *= eval_num_expr(&opers.get_children("oper")[1]),
+            "/" => to_ret /= eval_num_expr(&opers.get_children("oper")[1]),
             _ => {}
         }
     }

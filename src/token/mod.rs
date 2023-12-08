@@ -23,7 +23,8 @@ impl<'a> Token<'a> {
                     .iter()
                     .filter_map(|s| s.1.content_range())
                     .collect();
-                iter.first().map(|first| first.start..iter.last().unwrap().end)
+                iter.first()
+                    .map(|first| first.start..iter.last().unwrap().end)
             }
         }
     }
@@ -32,17 +33,19 @@ impl<'a> Token<'a> {
         self.content_range().map_or_else(|| "", |r| &self.source[r])
     }
 
-    pub fn get_children(&'a self, key: &'a str) -> Vec<&(String, Token<'a>)> {
+    pub fn get_children(&'a self, key: &'a str) -> Vec<Token<'a>> {
         match &self.data {
             TokenData::Leaf(_) => vec![],
-            TokenData::Branch(children) => children.iter().filter(|i| i.0 == key).collect(),
+            TokenData::Branch(children) => children
+                .iter()
+                .filter(|i| i.0 == key)
+                .map(|i| i.1.clone())
+                .collect(),
         }
     }
 
-    pub fn get_first_child(&'a self, key: &'a str) -> Option<&'a Token<'a>> {
-        self.get_children(key)
-            .iter().find(|i| i.0 == key)
-            .map(|m| &m.1)
+    pub fn get_first_child(&'a self, key: &'a str) -> Option<Token<'a>> {
+        self.get_children(key).get(0).cloned()
     }
 
     pub fn graph(&self) -> String {

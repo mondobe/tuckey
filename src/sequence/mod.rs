@@ -165,7 +165,7 @@ impl NoneOrMoreSeq {
 }
 
 pub struct OneOrMoreSeq {
-    pub match_name: Option<String>,
+    pub match_name: String,
     pub seq: Box<dyn Sequence>,
 }
 
@@ -174,9 +174,7 @@ impl Sequence for OneOrMoreSeq {
         let mut match_index = 0;
         let mut children = vec![];
         while let Some(matched) = self.seq.match_tokens(&tokens[match_index..], refs) {
-            if let Some(name) = &self.match_name {
-                children.push((name.to_string(), matched.new_token));
-            }
+            children.push((self.match_name.clone(), matched.new_token));
             match_index += matched.len;
         }
         if match_index > 0 {
@@ -194,7 +192,7 @@ impl Sequence for OneOrMoreSeq {
 }
 
 impl OneOrMoreSeq {
-    pub fn new(seq: Box<dyn Sequence>, match_name: Option<String>) -> Self {
+    pub fn new(seq: Box<dyn Sequence>, match_name: String) -> Self {
         Self { seq, match_name }
     }
 }
@@ -254,5 +252,27 @@ impl Sequence for RefSeq {
 impl RefSeq {
     pub fn new(name: String) -> Self {
         Self { name }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct AnySeq {}
+
+impl Sequence for AnySeq {
+    fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
+        if tokens.len() > 0 {
+            Some(TokenMatch {
+                len: 1,
+                new_token: tokens[0].clone(),
+            })
+        } else {
+            None
+        }
+    }
+}
+
+impl AnySeq {
+    pub fn new() -> Self {
+        Self {}
     }
 }

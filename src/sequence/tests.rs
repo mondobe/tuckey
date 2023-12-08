@@ -129,7 +129,7 @@ pub fn one_or_more_test() {
                     (Box::new(RawSeq::new("a".to_string())), "hi".to_string()),
                     (Box::new(RawSeq::new("b".to_string())), "".to_string()),
                 ])),
-                Some("inner".to_string()),
+                "inner".to_string(),
             )),
             "mult".to_string(),
         ),
