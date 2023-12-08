@@ -282,3 +282,56 @@ impl Default for AnySeq {
         Self::new()
     }
 }
+
+pub struct WhereSeq {
+    pub predicate: Box<dyn Fn(&Token<'_>) -> bool>,
+}
+
+impl Sequence for WhereSeq {
+    fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
+        tokens.first().and_then(move |t| {
+            if (self.predicate)(t) {
+                Some(TokenMatch {
+                    len: 1,
+                    new_token: t.clone(),
+                })
+            } else {
+                None
+            }
+        })
+    }
+}
+
+impl WhereSeq {
+    pub fn new(predicate: Box<dyn Fn(&Token<'_>) -> bool>) -> Self {
+        Self { predicate }
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct RangeSeq {
+    pub start: u32,
+    pub end: u32,
+}
+
+impl Sequence for RangeSeq {
+    fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
+        tokens.first().and_then(move |t| {
+            let first_char = t.content().chars().next().unwrap() as u32;
+            if (self.start..self.end).contains(&first_char) {
+                Some(TokenMatch {
+                    len: 1,
+                    new_token: t.clone(),
+                })
+            } else {
+                None
+            }
+        })
+    }
+}
+
+impl RangeSeq {
+    pub fn new(start: u32, end: u32) -> Self {
+        Self { start, end }
+    }
+}

@@ -15,7 +15,7 @@ pub fn meta_seqs() -> RefMap {
     map.insert(
         "wordChar".to_string(),
         Box::new(ChooseSeq::from_chars(
-            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890",
+            "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890_-",
         )),
     );
     map.insert(
@@ -131,15 +131,70 @@ pub fn meta_seqs() -> RefMap {
                 Box::new(RefSeq::new("parenSeq".to_string())),
                 "paren".to_string(),
             ),
+            (
+                Box::new(RefSeq::new("rangeSeq".to_string())),
+                "range".to_string(),
+            ),
             (Box::new(RefSeq::new("word".to_string())), "ref".to_string()),
+            (
+                Box::new(RefSeq::new("quoteSeq".to_string())),
+                "quote".to_string(),
+            ),
+            (
+                Box::new(RefSeq::new("fromCharsSeq".to_string())),
+                "fromChars".to_string(),
+            ),
         ])),
     );
     map.insert(
         "rawSeq".to_string(),
         Box::new(MultSeq::new(vec![
-            (Box::new(RawSeq::new("\'".to_string())), "".to_string()),
-            (Box::new(AnySeq::new()), "token".to_string()),
-            (Box::new(RawSeq::new("\'".to_string())), "".to_string()),
+            (Box::new(RawSeq::new("'".to_string())), "".to_string()),
+            (
+                Box::new(MultSeq::new(vec![(
+                    Box::new(WhereSeq::new(Box::new(|t| t.content() != "'"))),
+                    "".to_string(),
+                )])),
+                "token".to_string(),
+            ),
+            (Box::new(RawSeq::new("'".to_string())), "".to_string()),
+        ])),
+    );
+    map.insert(
+        "rangeSeq".to_string(),
+        Box::new(MultSeq::new(vec![
+            (Box::new(AnySeq::new()), "start".to_string()),
+            (Box::new(RawSeq::new(".".to_string())), "".to_string()),
+            (Box::new(RawSeq::new(".".to_string())), "".to_string()),
+            (Box::new(AnySeq::new()), "end".to_string()),
+        ])),
+    );
+    map.insert(
+        "quoteSeq".to_string(),
+        Box::new(MultSeq::new(vec![
+            (Box::new(RawSeq::new("{".to_string())), "".to_string()),
+            (
+                Box::new(OneOrMoreSeq::new(
+                    Box::new(WhereSeq::new(Box::new(|t| t.content() != "}"))),
+                    "".to_string(),
+                )),
+                "chars".to_string(),
+            ),
+            (Box::new(RawSeq::new("}".to_string())), "".to_string()),
+        ])),
+    );
+    map.insert(
+        "fromCharsSeq".to_string(),
+        Box::new(MultSeq::new(vec![
+            (Box::new(RawSeq::new("[".to_string())), "".to_string()),
+            (
+                Box::new(OneOrMoreSeq::new(
+                    Box::new(WhereSeq::new(Box::new(|t| t.content() != "]"))),
+                    "".to_string(),
+                )),
+                "chars".to_string(),
+            ),
+            (Box::new(RawSeq::new("]".to_string())), "".to_string()),
         ])),
     );
     map.insert(
@@ -180,7 +235,7 @@ pub fn meta_seqs() -> RefMap {
     map
 }
 
-pub fn eval(text: &str) -> RefMap {
+pub fn eval_rule_set(text: &str) -> RefMap {
     let mut map = RefMap::new();
     let seqs = meta_seqs();
     let seq = seqs.get("main").unwrap();
@@ -280,6 +335,39 @@ pub fn eval_one_seq(token: &Token<'_>) -> Box<dyn Sequence> {
         Box::new(RefSeq::new(ref_name.content().to_string()))
     } else if let Some(seq_t) = token.get_first_child("paren") {
         eval_seq(&seq_t.get_first_child("seq").unwrap())
+    } else if let Some(seq_t) = token.get_first_child("quote") {
+        let in_tox = seq_t.get_first_child("chars").unwrap();
+        Box::new(MultSeq::new(
+            in_tox
+                .content()
+                .chars()
+                .map(|c| {
+                    (
+                        Box::new(RawSeq::new(c.to_string())) as Box<dyn Sequence>,
+                        "".to_string(),
+                    )
+                })
+                .collect(),
+        ))
+    } else if let Some(seq_t) = token.get_first_child("fromChars") {
+        let in_tox = seq_t.get_first_child("chars").unwrap();
+        Box::new(ChooseSeq::from_chars(in_tox.content()))
+    } else if let Some(seq_t) = token.get_first_child("range") {
+        let start = seq_t
+            .get_first_child("start")
+            .unwrap()
+            .content()
+            .chars()
+            .next()
+            .unwrap() as u32;
+        let end = seq_t
+            .get_first_child("end")
+            .unwrap()
+            .content()
+            .chars()
+            .next()
+            .unwrap() as u32;
+        Box::new(RangeSeq::new(start, end))
     } else {
         unimplemented!()
     }
@@ -310,13 +398,25 @@ main = 'a':hi & 'b'
 digit = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0'
 main = digit+
 ", "1205";
-"one or more rule")]
+"digit rule")]
 #[test_case("
 main = 'a':hi & 'b'*
 ", "a";
 "mult and one or more")]
+#[test_case("
+main = {abcde}
+", "abcde";
+"one quote rule")]
+#[test_case("
+main = [abcde]+
+", "abcdef";
+"one or more mult rule")]
+#[test_case("
+main = a..z+
+", "abcdef65";
+"range rule")]
 pub fn test_eval(rules: &str, text: &str) {
-    let seqs = eval(rules);
+    let seqs = eval_rule_set(rules);
     let seq = seqs.get("main").unwrap();
     let matched = seq.match_corpus_first(&Corpus::make(text), &seqs);
     println!("{matched:?}");
