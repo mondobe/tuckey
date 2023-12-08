@@ -70,7 +70,7 @@ pub fn none_or_more_test() {
     seq.assert_matches(
         &Corpus::make("abccccccccaba"),
         new_ref_map,
-        TokenMatchTestType::None,
+        TokenMatchTestType::First,
     );
     seq.assert_matches(
         &Corpus::make("acbcaba"),

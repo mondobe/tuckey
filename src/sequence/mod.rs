@@ -260,7 +260,7 @@ pub struct AnySeq {}
 
 impl Sequence for AnySeq {
     fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
-        if tokens.len() > 0 {
+        if !tokens.is_empty() {
             Some(TokenMatch {
                 len: 1,
                 new_token: tokens[0].clone(),
@@ -274,5 +274,11 @@ impl Sequence for AnySeq {
 impl AnySeq {
     pub fn new() -> Self {
         Self {}
+    }
+}
+
+impl Default for AnySeq {
+    fn default() -> Self {
+        Self::new()
     }
 }
