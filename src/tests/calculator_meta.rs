@@ -9,7 +9,7 @@ pub fn calc_seqs() -> RefMap {
         "
     nonzero = 1..9
     digit = 0..9
-    posInt = nonzero & digit*
+    posInt = nonzero:first & digit*
     oper = [+-]
     multOper = [*/]
     ws_s = [ \t\n\r]*
