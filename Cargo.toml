@@ -2,6 +2,9 @@
 name = "tuckey"
 version = "0.1.0"
 edition = "2021"
+description = "An easy-to-use, rusty lexer/parser generation framework"
+license = "MIT"
+repository = "https://github.com/mondobe/tuckey"
 
 [dependencies]
 test-case = "3.3.1"
