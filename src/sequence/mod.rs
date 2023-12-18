@@ -335,3 +335,68 @@ impl RangeSeq {
         Self { start, end }
     }
 }
+
+#[derive(Clone, PartialEq)]
+pub struct WhitespaceSeq {}
+
+impl Sequence for WhitespaceSeq {
+    fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
+        let mut match_index = 0;
+        let mut children = vec![];
+        while tokens[match_index..].len() > 0
+            && tokens[match_index]
+                .content()
+                .chars()
+                .all(|c| c.is_whitespace())
+        {
+            children.push(("".to_string(), tokens[0].clone()));
+            match_index += 1;
+        }
+        Some(TokenMatch {
+            len: match_index,
+            new_token: Token {
+                source: tokens.get(0).map_or_else(|| "", |t| t.source),
+                data: TokenData::Branch(children),
+            },
+        })
+    }
+}
+
+impl WhitespaceSeq {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Default for WhitespaceSeq {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[derive(Clone, PartialEq)]
+pub struct NilSeq {}
+
+impl Sequence for NilSeq {
+    fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
+        Some(TokenMatch {
+            len: 0,
+            new_token: Token {
+                source: tokens[0].source,
+                data: TokenData::Leaf(0..0),
+            },
+        })
+    }
+}
+
+impl NilSeq {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+impl Default for NilSeq {
+    fn default() -> Self {
+        Self::new()
+    }
+}

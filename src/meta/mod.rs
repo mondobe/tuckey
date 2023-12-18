@@ -54,7 +54,7 @@ pub fn meta_seqs() -> RefMap {
                 Box::new(NoneOrMoreSeq::new(
                     Box::new(MultSeq::new(vec![
                         (Box::new(RefSeq::new("ws*".to_string())), "".to_string()),
-                        (Box::new(RawSeq::new("&".to_string())), "".to_string()),
+                        (Box::new(ChooseSeq::from_chars("&+")), "oper".to_string()),
                         (Box::new(RefSeq::new("ws*".to_string())), "".to_string()),
                         (
                             Box::new(RefSeq::new("noMultSeq".to_string())),
@@ -237,6 +237,8 @@ pub fn meta_seqs() -> RefMap {
 
 pub fn eval_rule_set(text: &str) -> RefMap {
     let mut map = RefMap::new();
+    map.insert("ws".to_string(), Box::new(WhitespaceSeq::new()));
+    map.insert("_".to_string(), Box::new(NilSeq::new()));
     let seqs = meta_seqs();
     let seq = seqs.get("main").unwrap();
     let matched = seq
@@ -267,6 +269,9 @@ pub fn eval_seq(token: &Token<'_>) -> Box<dyn Sequence> {
     let rhs_s = token.get_first_child("rhs's").unwrap();
     let rhs_s = rhs_s.get_children("rhs's");
     for rhs in rhs_s {
+        if rhs.get_first_child("oper").unwrap().content() == "+" {
+            to_ret.push((Box::new(RefSeq::new("ws".to_string())), "".to_string()))
+        }
         let seq = eval_no_mult_seq(&rhs.get_first_child("seq").unwrap());
         let name = rhs
             .get_first_child("name")
@@ -395,6 +400,10 @@ main = 'a':hi & 'b'
 ", "ab";
 "one mult rule")]
 #[test_case("
+main = 'a':hi + 'b'
+", "a b";
+"one mult with ws rule")]
+#[test_case("
 digit = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0'
 main = digit+
 ", "1205";
@@ -415,6 +424,10 @@ main = [abcde]+
 main = a..z+
 ", "abcdef65";
 "range rule")]
+#[test_case("
+main = _ + a..z+ & _ + a..z+
+", "    abcdef    abc65";
+"whitespace edges rule")]
 pub fn test_eval(rules: &str, text: &str) {
     let seqs = eval_rule_set(rules);
     let seq = seqs.get("main").unwrap();
