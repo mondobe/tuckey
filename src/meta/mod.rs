@@ -428,6 +428,16 @@ main = a..z+
 main = _ + a..z+ & _ + a..z+
 ", "    abcdef    abc65";
 "whitespace edges rule")]
+#[test_case("
+main = _
+", "
+ ";
+"nil rule")]
+#[test_case("
+main = _ + a..z+ + _
+", "
+abcdef";
+"whitespace surroundings")]
 pub fn test_eval(rules: &str, text: &str) {
     let seqs = eval_rule_set(rules);
     let seq = seqs.get("main").unwrap();

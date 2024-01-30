@@ -378,11 +378,11 @@ impl Default for WhitespaceSeq {
 pub struct NilSeq {}
 
 impl Sequence for NilSeq {
-    fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
+    fn match_tokens<'a>(&'a self, _: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
         Some(TokenMatch {
             len: 0,
             new_token: Token {
-                source: tokens[0].source,
+                source: "",
                 data: TokenData::Leaf(0..0),
             },
         })
