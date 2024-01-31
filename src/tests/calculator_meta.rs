@@ -12,13 +12,12 @@ pub fn calc_seqs() -> RefMap {
     posInt = nonzero:first & digit*
     oper = [+-]
     multOper = [*/]
-    ws_s = [ \t\n\r]*
     expr = 
-        multExpr:lhs & 
-        (ws_s & oper:oper & ws_s & multExpr:oper).rhs_s*:rhs_s
+        multExpr:lhs + 
+        (_ + oper:oper + multExpr:oper).rhs_s*:rhs_s
     multExpr = 
-        numExpr:lhs & 
-        (ws_s & multOper:oper & ws_s & numExpr:oper).rhs_s*:rhs_s
+        numExpr:lhs + 
+        (_ + multOper:oper + numExpr:oper).rhs_s*:rhs_s
     numExpr = posInt
     ",
     )

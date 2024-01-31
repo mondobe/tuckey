@@ -112,17 +112,24 @@ impl MultSeq {
 
 pub struct OptSeq {
     pub seq: Box<dyn Sequence>,
+    pub match_name: String,
 }
 
 impl Sequence for OptSeq {
     fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], refs: &'a RefMap) -> Option<TokenMatch> {
         match self.seq.match_tokens(tokens, refs) {
-            Some(did_match) => Some(did_match),
+            Some(did_match) => Some(TokenMatch {
+                len: did_match.len,
+                new_token: Token {
+                    source: tokens[0].source,
+                    data: TokenData::Branch(vec![(self.match_name.clone(), did_match.new_token)]),
+                },
+            }),
             None => Some(TokenMatch {
                 len: 0,
                 new_token: Token {
                     source: tokens[0].source,
-                    data: TokenData::Leaf(0..0),
+                    data: TokenData::Branch(vec![]),
                 },
             }),
         }
@@ -130,8 +137,8 @@ impl Sequence for OptSeq {
 }
 
 impl OptSeq {
-    pub fn new(seq: Box<dyn Sequence>) -> Self {
-        Self { seq }
+    pub fn new(seq: Box<dyn Sequence>, match_name: String) -> Self {
+        Self { seq, match_name }
     }
 }
 
@@ -318,7 +325,7 @@ impl Sequence for RangeSeq {
     fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
         tokens.first().and_then(move |t| {
             let first_char = t.content().chars().next().unwrap() as u32;
-            if (self.start..self.end).contains(&first_char) {
+            if (self.start..=self.end).contains(&first_char) {
                 Some(TokenMatch {
                     len: 1,
                     new_token: t.clone(),

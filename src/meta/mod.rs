@@ -115,7 +115,10 @@ pub fn meta_seqs() -> RefMap {
                 "name".to_string(),
             ),
             (
-                Box::new(OptSeq::new(Box::new(ChooseSeq::from_chars("+*?")))),
+                Box::new(OptSeq::new(
+                    Box::new(ChooseSeq::from_chars("+*?")),
+                    "plus".to_string(),
+                )),
                 "plus".to_string(),
             ),
         ])),
@@ -207,23 +210,29 @@ pub fn meta_seqs() -> RefMap {
     );
     map.insert(
         "optName".to_string(),
-        Box::new(OptSeq::new(Box::new(MultSeq::new(vec![
-            (Box::new(RawSeq::new(".".to_string())), "".to_string()),
-            (
-                Box::new(RefSeq::new("word".to_string())),
-                "name".to_string(),
-            ),
-        ])))),
+        Box::new(OptSeq::new(
+            Box::new(MultSeq::new(vec![
+                (Box::new(RawSeq::new(".".to_string())), "".to_string()),
+                (
+                    Box::new(RefSeq::new("word".to_string())),
+                    "name".to_string(),
+                ),
+            ])),
+            "name".to_string(),
+        )),
     );
     map.insert(
         "optMultName".to_string(),
-        Box::new(OptSeq::new(Box::new(MultSeq::new(vec![
-            (Box::new(RawSeq::new(":".to_string())), "".to_string()),
-            (
-                Box::new(RefSeq::new("word".to_string())),
-                "name".to_string(),
-            ),
-        ])))),
+        Box::new(OptSeq::new(
+            Box::new(MultSeq::new(vec![
+                (Box::new(RawSeq::new(":".to_string())), "".to_string()),
+                (
+                    Box::new(RefSeq::new("word".to_string())),
+                    "name".to_string(),
+                ),
+            ])),
+            "name".to_string(),
+        )),
     );
     map.insert(
         "main".to_string(),
@@ -264,7 +273,10 @@ pub fn eval_seq(token: &Token<'_>) -> Box<dyn Sequence> {
         .get_first_child("name")
         .unwrap()
         .get_first_child("name")
-        .map_or_else(|| "".to_string(), |t| t.content().to_string());
+        .map_or_else(
+            || "".to_string(),
+            |t| t.get_first_child("name").unwrap().content().to_string(),
+        );
     let mut to_ret = vec![(seq, name)];
     let rhs_s = token.get_first_child("rhs's").unwrap();
     let rhs_s = rhs_s.get_children("rhs's");
@@ -277,7 +289,10 @@ pub fn eval_seq(token: &Token<'_>) -> Box<dyn Sequence> {
             .get_first_child("name")
             .unwrap()
             .get_first_child("name")
-            .map_or_else(|| "".to_string(), |t| t.content().to_string());
+            .map_or_else(
+                || "".to_string(),
+                |t| t.get_first_child("name").unwrap().content().to_string(),
+            );
         to_ret.push((seq, name));
     }
     if to_ret.len() == 1 {
@@ -294,7 +309,10 @@ pub fn eval_no_mult_seq(token: &Token<'_>) -> Box<dyn Sequence> {
         .get_first_child("name")
         .unwrap()
         .get_first_child("name")
-        .map_or_else(|| "".to_string(), |t| t.content().to_string());
+        .map_or_else(
+            || "".to_string(),
+            |t| t.get_first_child("name").unwrap().content().to_string(),
+        );
     let mut to_ret = vec![(seq, name)];
     let rhs_s = token.get_first_child("rhs's").unwrap();
     let rhs_s = rhs_s.get_children("rhs's");
@@ -305,7 +323,10 @@ pub fn eval_no_mult_seq(token: &Token<'_>) -> Box<dyn Sequence> {
             .get_first_child("name")
             .unwrap()
             .get_first_child("name")
-            .map_or_else(|| "".to_string(), |t| t.content().to_string());
+            .map_or_else(
+                || "".to_string(),
+                |t| t.get_first_child("name").unwrap().content().to_string(),
+            );
         to_ret.push((seq, name));
     }
     if to_ret.len() == 1 {
@@ -321,7 +342,10 @@ pub fn eval_no_choose_seq(token: &Token<'_>) -> Box<dyn Sequence> {
         .get_first_child("name")
         .unwrap()
         .get_first_child("name")
-        .map_or_else(|| "".to_string(), |t| t.content().to_string());
+        .map_or_else(
+            || "".to_string(),
+            |t| t.get_first_child("name").unwrap().content().to_string(),
+        );
     let plus = token.get_first_child("plus").unwrap().content() == "+";
     let many = token.get_first_child("plus").unwrap().content() == "*";
     let opt = token.get_first_child("plus").unwrap().content() == "?";
@@ -330,7 +354,7 @@ pub fn eval_no_choose_seq(token: &Token<'_>) -> Box<dyn Sequence> {
     } else if many {
         Box::new(NoneOrMoreSeq::new(seq, name))
     } else if opt {
-        Box::new(OptSeq::new(seq))
+        Box::new(OptSeq::new(seq, name))
     } else {
         seq
     }

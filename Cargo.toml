@@ -1,6 +1,6 @@
 [package]
 name = "tuckey"
-version = "0.1.5"
+version = "0.1.6"
 edition = "2021"
 description = "An easy-to-use, rusty lexer/parser generation framework"
 license = "MIT"

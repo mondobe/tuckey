@@ -21,7 +21,10 @@ pub fn opt_test() {
         (Box::new(RawSeq::new("a".to_string())), "hi".to_string()),
         (Box::new(RawSeq::new("b".to_string())), "".to_string()),
         (
-            Box::new(OptSeq::new(Box::new(RawSeq::new("c".to_string())))),
+            Box::new(OptSeq::new(
+                Box::new(RawSeq::new("c".to_string())),
+                "opt".to_string(),
+            )),
             "".to_string(),
         ),
     ]);
