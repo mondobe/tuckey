@@ -115,7 +115,7 @@ pub fn meta_seqs() -> RefMap {
                 "name".to_string(),
             ),
             (
-                Box::new(OptSeq::new(Box::new(ChooseSeq::from_chars("+*")))),
+                Box::new(OptSeq::new(Box::new(ChooseSeq::from_chars("+*?")))),
                 "plus".to_string(),
             ),
         ])),
@@ -324,10 +324,13 @@ pub fn eval_no_choose_seq(token: &Token<'_>) -> Box<dyn Sequence> {
         .map_or_else(|| "".to_string(), |t| t.content().to_string());
     let plus = token.get_first_child("plus").unwrap().content() == "+";
     let many = token.get_first_child("plus").unwrap().content() == "*";
+    let opt = token.get_first_child("plus").unwrap().content() == "?";
     if plus {
         Box::new(OneOrMoreSeq::new(seq, name))
     } else if many {
         Box::new(NoneOrMoreSeq::new(seq, name))
+    } else if opt {
+        Box::new(OptSeq::new(seq))
     } else {
         seq
     }
@@ -437,9 +440,12 @@ main = _
 "nil rule")]
 #[test_case("
 main = _ + a..z+ + _
-", "
-abcdef";
+", "abcdef";
 "whitespace surroundings")]
+#[test_case("
+main = 'a'?:opt + 'b':req
+", "b";
+"optional rule")]
 pub fn test_eval(rules: &str, text: &str) {
     let seqs = eval_rule_set(rules);
     let seq = seqs.get("main").unwrap();
