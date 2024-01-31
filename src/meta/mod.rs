@@ -245,6 +245,7 @@ pub fn eval_rule_set(text: &str) -> RefMap {
         .match_corpus_first(&Corpus::make(text), &seqs)
         .unwrap()
         .new_token;
+    println!("{}", matched.graph());
     for token in matched.get_children("rule") {
         let eval = eval_rule(&token);
         map.insert(eval.0, eval.1);
@@ -288,8 +289,9 @@ pub fn eval_seq(token: &Token<'_>) -> Box<dyn Sequence> {
 }
 
 pub fn eval_no_mult_seq(token: &Token<'_>) -> Box<dyn Sequence> {
-    let seq = eval_no_choose_seq(&token.get_first_child("lhs").unwrap());
-    let name = token
+    let st = token.get_first_child("lhs").unwrap();
+    let seq = eval_no_choose_seq(&st);
+    let name = st
         .get_first_child("name")
         .unwrap()
         .get_first_child("name")
@@ -298,8 +300,9 @@ pub fn eval_no_mult_seq(token: &Token<'_>) -> Box<dyn Sequence> {
     let rhs_s = token.get_first_child("rhs's").unwrap();
     let rhs_s = rhs_s.get_children("rhs's");
     for rhs in rhs_s {
-        let seq = eval_no_choose_seq(&rhs.get_first_child("seq").unwrap());
-        let name = rhs
+        let st = rhs.get_first_child("seq").unwrap();
+        let seq = eval_no_choose_seq(&st);
+        let name = st
             .get_first_child("name")
             .unwrap()
             .get_first_child("name")
@@ -404,7 +407,7 @@ main = 'a':hi + 'b'
 ", "a b";
 "one mult with ws rule")]
 #[test_case("
-digit = '1' | '2' | '3' | '4' | '5' | '6' | '7' | '8' | '9' | '0'
+digit = '1'.one | '2'.two | '3'.three | '4'.four | '5'.five | '6'.six | '7'.seven | '8'.eight | '9'.nine | '0'.zero
 main = digit+
 ", "1205";
 "digit rule")]
