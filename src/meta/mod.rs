@@ -245,7 +245,6 @@ pub fn eval_rule_set(text: &str) -> RefMap {
         .match_corpus_first(&Corpus::make(text), &seqs)
         .unwrap()
         .new_token;
-    println!("{}", matched.graph());
     for token in matched.get_children("rule") {
         let eval = eval_rule(&token);
         map.insert(eval.0, eval.1);
