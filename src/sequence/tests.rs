@@ -174,3 +174,20 @@ pub fn choose_test() {
     seq.assert_matches(&Corpus::make("d"), new_ref_map, TokenMatchTestType::None);
     seq.assert_matches(&Corpus::make(""), new_ref_map, TokenMatchTestType::None);
 }
+
+#[test]
+pub fn except_test() {
+    let seq = ExceptSeq::new(Box::new(RawSeq::new(" ".to_string())));
+    let new_ref_map = &RefMap::new();
+    seq.assert_matches(
+        &Corpus::make("hi there!"),
+        new_ref_map,
+        TokenMatchTestType::First,
+    );
+    seq.assert_matches(
+        &Corpus::make(" whoa"),
+        new_ref_map,
+        TokenMatchTestType::None,
+    );
+    seq.assert_matches(&Corpus::make(""), new_ref_map, TokenMatchTestType::None);
+}

@@ -105,6 +105,19 @@ pub fn meta_seqs() -> RefMap {
     );
     map.insert(
         "noChooseSeq".to_string(),
+        Box::new(ChooseSeq::new(vec![
+            (
+                Box::new(RefSeq::new("oneSuffixSeq".to_string())),
+                "oneSuffix".to_string(),
+            ),
+            (
+                Box::new(RefSeq::new("oneSeq".to_string())),
+                "one".to_string(),
+            ),
+        ])),
+    );
+    map.insert(
+        "oneSuffixSeq".to_string(),
         Box::new(MultSeq::new(vec![
             (
                 Box::new(RefSeq::new("oneSeq".to_string())),
@@ -114,13 +127,7 @@ pub fn meta_seqs() -> RefMap {
                 Box::new(RefSeq::new("optName".to_string())),
                 "name".to_string(),
             ),
-            (
-                Box::new(OptSeq::new(
-                    Box::new(ChooseSeq::from_chars("+*?")),
-                    "plus".to_string(),
-                )),
-                "plus".to_string(),
-            ),
+            (Box::new(ChooseSeq::from_chars("+*?!")), "plus".to_string()),
         ])),
     );
     map.insert(
@@ -305,7 +312,7 @@ pub fn eval_seq(token: &Token<'_>) -> Box<dyn Sequence> {
 pub fn eval_no_mult_seq(token: &Token<'_>) -> Box<dyn Sequence> {
     let st = token.get_first_child("lhs").unwrap();
     let seq = eval_no_choose_seq(&st);
-    let name = st
+    let name = token
         .get_first_child("name")
         .unwrap()
         .get_first_child("name")
@@ -319,7 +326,7 @@ pub fn eval_no_mult_seq(token: &Token<'_>) -> Box<dyn Sequence> {
     for rhs in rhs_s {
         let st = rhs.get_first_child("seq").unwrap();
         let seq = eval_no_choose_seq(&st);
-        let name = st
+        let name = rhs
             .get_first_child("name")
             .unwrap()
             .get_first_child("name")
@@ -337,7 +344,19 @@ pub fn eval_no_mult_seq(token: &Token<'_>) -> Box<dyn Sequence> {
 }
 
 pub fn eval_no_choose_seq(token: &Token<'_>) -> Box<dyn Sequence> {
-    let seq = eval_one_seq(&token.get_first_child("seq").unwrap());
+    if let Some(one) = token.get_first_child("one") {
+        eval_one_seq(&one)
+    } else if let Some(suffix) = token.get_first_child("oneSuffix") {
+        eval_suffix_seq(&suffix)
+    } else {
+        let suffix = token.get_first_child("suffix").unwrap();
+        eval_suffix_seq(&suffix)
+    }
+}
+
+pub fn eval_suffix_seq(token: &Token<'_>) -> Box<dyn Sequence> {
+    let child = &token.get_first_child("seq").unwrap();
+    let seq = eval_one_seq(child);
     let name = token
         .get_first_child("name")
         .unwrap()
@@ -349,12 +368,15 @@ pub fn eval_no_choose_seq(token: &Token<'_>) -> Box<dyn Sequence> {
     let plus = token.get_first_child("plus").unwrap().content() == "+";
     let many = token.get_first_child("plus").unwrap().content() == "*";
     let opt = token.get_first_child("plus").unwrap().content() == "?";
+    let except = token.get_first_child("plus").unwrap().content() == "!";
     if plus {
         Box::new(OneOrMoreSeq::new(seq, name))
     } else if many {
         Box::new(NoneOrMoreSeq::new(seq, name))
     } else if opt {
         Box::new(OptSeq::new(seq, name))
+    } else if except {
+        Box::new(ExceptSeq::new(seq))
     } else {
         seq
     }
@@ -433,6 +455,10 @@ main = 'a':hi + 'b'
 ", "a b";
 "one mult with ws rule")]
 #[test_case("
+main = 'a'+
+", "a";
+"one or more rule")]
+#[test_case("
 digit = '1'.one | '2'.two | '3'.three | '4'.four | '5'.five | '6'.six | '7'.seven | '8'.eight | '9'.nine | '0'.zero
 main = digit+
 ", "1205";
@@ -440,7 +466,7 @@ main = digit+
 #[test_case("
 main = 'a':hi & 'b'*
 ", "a";
-"mult and one or more")]
+"mult and none or more")]
 #[test_case("
 main = {abcde}
 ", "abcde";
@@ -470,9 +496,14 @@ main = _ + a..z+ + _
 main = 'a'?:opt + 'b':req
 ", "b";
 "optional rule")]
+#[test_case("
+main = ('j'!)?:jay
+", "kjjkmj";
+"except rule")]
 pub fn test_eval(rules: &str, text: &str) {
     let seqs = eval_rule_set(rules);
     let seq = seqs.get("main").unwrap();
+    println!("Rule successfully created");
     let matched = seq.match_corpus_first(&Corpus::make(text), &seqs);
     println!("{matched:?}");
 }

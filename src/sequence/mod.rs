@@ -350,7 +350,7 @@ impl Sequence for WhitespaceSeq {
     fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], _: &'a RefMap) -> Option<TokenMatch> {
         let mut match_index = 0;
         let mut children = vec![];
-        while tokens[match_index..].len() > 0
+        while !tokens[match_index..].is_empty()
             && tokens[match_index]
                 .content()
                 .chars()
@@ -405,5 +405,32 @@ impl NilSeq {
 impl Default for NilSeq {
     fn default() -> Self {
         Self::new()
+    }
+}
+
+pub struct ExceptSeq {
+    pub except: Box<dyn Sequence>,
+}
+
+impl Sequence for ExceptSeq {
+    fn match_tokens<'a>(&'a self, tokens: &[Token<'a>], refs: &'a RefMap) -> Option<TokenMatch> {
+        let Some(first_token) = tokens.get(0) else {
+            return None;
+        };
+
+        if self.except.match_tokens(tokens, refs).is_some() {
+            None
+        } else {
+            Some(TokenMatch {
+                len: 1,
+                new_token: first_token.clone(),
+            })
+        }
+    }
+}
+
+impl ExceptSeq {
+    pub fn new(except: Box<dyn Sequence>) -> Self {
+        Self { except }
     }
 }
